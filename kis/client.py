@@ -26,9 +26,3 @@ def load(use_virtual_trade: bool) -> pykis.PyKis:
         secretkey=config.secret_key,
         keep_token=True,
     )
-
-
-if __name__ == "__main__":
-    kis = load(use_virtual_trade=False)
-    breakpoint()
-    logger.info(kis.account().balance())
