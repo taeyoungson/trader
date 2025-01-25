@@ -1,0 +1,20 @@
+{
+  "devDependencies": {
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10"
+  },
+  "scripts": {
+    "prepare": "husky install",
+    "format": "npm run format:ruff",
+    "format:ruff": "git diff --name-only --cached --diff-filter=d | grep '.py$' | xargs ruff format",
+    "check": "npm run check:ruff",
+    "check:ruff": "git diff --name-only --cached --diff-filter=d | grep '.py$' | xargs ruff check",
+    "test": "pytest"
+  },
+  "lint-staged": {
+    "*.py": [
+      "ruff format",
+      "ruff check"
+    ]
+  }
+}
