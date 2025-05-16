@@ -48,12 +48,22 @@ def _is_corp_name_exists(corp_name_or_corp_eng_name: str) -> bool:
 
 
 @functools.cache
-def _get_corp_code_by_name(name: str) -> str:
+def get_corp_code_by_name(name: str) -> str:
     assert _is_corp_name_exists(name)
     corp_codes = _get_corp_codes()
     for corp_code in corp_codes:
         if corp_code.corp_name == name or corp_code.corp_eng_name == name:
             return corp_code.corp_code
+    raise ValueError(f"Cannot find corp_code by name: {name}")
+
+
+@functools.cache
+def get_stock_code_by_name(name: str) -> str:
+    assert _is_corp_name_exists(name)
+    corp_codes = _get_corp_codes()
+    for corp_code in corp_codes:
+        if corp_code.corp_name == name or corp_code.corp_eng_name == name:
+            return corp_code.stock_code
     raise ValueError(f"Cannot find corp_code by name: {name}")
 
 
@@ -80,7 +90,7 @@ def get_financial_report(
                     url=url.get_url_by_name(url_key),
                     params={
                         "crtfc_key": crtfc_key,
-                        "corp_code": _get_corp_code_by_name(name),
+                        "corp_code": get_corp_code_by_name(name),
                         "bsns_year": str(bsns_year),
                         "reprt_code": reprt_code,
                         "fs_div": fs_div,
