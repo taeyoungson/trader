@@ -5,7 +5,8 @@
   },
   "scripts": {
     "prepare": "husky install",
-    "format": "npm run format:ruff",
+    "format": "npm run format:ruff && npm run format:isort",
+    "format:isort": "git diff --name-only --cached --diff-filter=d | grep '.py$' | xargs isort --profile google",
     "format:ruff": "git diff --name-only --cached --diff-filter=d | grep '.py$' | xargs ruff format",
     "check": "npm run check:ruff",
     "check:ruff": "git diff --name-only --cached --diff-filter=d | grep '.py$' | xargs ruff check",
@@ -13,6 +14,7 @@
   },
   "lint-staged": {
     "*.py": [
+      "isort --profile google",
       "ruff format",
       "ruff check"
     ]

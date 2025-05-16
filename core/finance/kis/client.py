@@ -1,6 +1,7 @@
-from kis import config as kis_config
-import pykis
 from loguru import logger
+import pykis
+
+from core.finance.kis import config as kis_config
 
 
 def load(use_virtual_trade: bool) -> pykis.PyKis:
