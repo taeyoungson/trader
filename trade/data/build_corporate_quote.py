@@ -13,7 +13,7 @@ from trade.data import tables
 @instance.DefaultBackgroundScheduler.scheduled_job(
     jobs.TriggerType.CRON, id="build_corportate_quote", day_of_week="0, 1, 2, 3, 4", hour=16
 )
-def build_corportate_quote(database: str = "finance", market: str = "KRX"):
+def build_corporate_quote(database: str = "finance", market: str = "KRX"):
     corp_quotes = []
     with session.get_database_session(database) as db_session:
         corps_with_stock_codes = db_session.query(tables.CorporateInfo).filter(tables.CorporateInfo.stock_code).all()

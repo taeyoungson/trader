@@ -11,7 +11,7 @@ from trade.data import tables
 @instance.DefaultBackgroundScheduler.scheduled_job(
     jobs.TriggerType.CRON, id="build_corportate_info", day_of_week="0", hour=5
 )
-def build_corportate_info(database: str = "finance"):
+def build_corpotate_info(database: str = "finance"):
     corp_info_lists = dart_request.get_corp_item_lists()
     corp_infos = [item.model_dump() for item in corp_info_lists]
 
