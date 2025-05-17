@@ -3,12 +3,15 @@ name = "trader-kis"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = "==3.11.9"
 dependencies = [
+    "apscheduler>=3.11.0",
+    "cachetools>=5.5.2",
     "langchain>=0.3.25",
     "langchain-core>=0.3.60",
     "langchain-openai>=0.3.17",
     "loguru>=0.7.3",
+    "mysqlclient>=2.2.7",
     "overrides>=7.7.0",
     "pandas>=2.2.3",
     "pydantic-settings>=2.7.1",

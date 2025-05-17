@@ -30,8 +30,11 @@ _SYSTEM_PROMPT = """
     2. Financial statement analysis  
     3. Stock valuation analysis  
     4. Chart trend analysis  
-    5. Based on all available data and your analysis on them, determine whether to invest or not. 
-    6. If you recommend to invest, provide specific buy, take-profit and stop-loss price recommendations.
+    5. Based on all available data and your analysis on them, determine whether it is possible to take profit within 3 months.
+    6. If skeptical, do not recommend to invest.
+    7. If you recommend to invest, provide specific buy, target and stop price recommendations.
+      - for recommend prices, you should enclose them with brackets, — without commas or currency units.
+      - for example, [[buy_price: 4500]], [[target_price: 6000]], [[stop_price: 4000]]
 """
 
 
