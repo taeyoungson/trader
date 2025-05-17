@@ -1,6 +1,7 @@
 import time
 
 from core.scheduler import instance
+from trade import advisor  # noqa
 from trade import data  # noqa
 
 
