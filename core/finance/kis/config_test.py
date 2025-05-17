@@ -1,6 +1,8 @@
 import os
+
 import pytest
-from kis import config
+
+from core.finance.kis import config
 
 
 @pytest.mark.parametrize(
