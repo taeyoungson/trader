@@ -6,8 +6,9 @@ import pydantic
 
 from core.db import session
 from core.finance.kis import trader
-from core.scheduler import instance
-from core.scheduler import jobs
+
+# from core.scheduler import instance
+# from core.scheduler import jobs
 from core.utils import time as time_utils
 from trade.advisor import tables as advisor_tables
 
@@ -87,9 +88,9 @@ class GPTTrader:
         logger.info("Stock monitor stopped.")
 
 
-@instance.DefaultBackgroundScheduler.scheduled_job(
-    jobs.TriggerType.CRON, id="trader_start", day_of_week="0, 1, 2, 3, 4", hour=9
-)
+# @instance.DefaultBackgroundScheduler.scheduled_job(
+#     jobs.TriggerType.CRON, id="trader_start", day_of_week="0, 1, 2, 3, 4", hour=9
+# )
 def start():
     global _TRADER
     assert not _TRADER
@@ -97,9 +98,9 @@ def start():
     _TRADER.start()
 
 
-@instance.DefaultBackgroundScheduler.scheduled_job(
-    jobs.TriggerType.CRON, id="trader_start", day_of_week="0, 1, 2, 3, 4", hour=15, minute=30
-)
+# @instance.DefaultBackgroundScheduler.scheduled_job(
+#     jobs.TriggerType.CRON, id="trader_start", day_of_week="0, 1, 2, 3, 4", hour=15, minute=30
+# )
 def stop():
     global _TRADER
     assert _TRADER
