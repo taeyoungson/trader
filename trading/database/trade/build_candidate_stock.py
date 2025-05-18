@@ -36,6 +36,7 @@ def build_candidate_stock(read_database: str = "finance", write_database: str = 
             .filter(data_tables.CorporateQuote.overbought == "0")
             .filter((0.5 <= data_tables.CorporateQuote.per) & (data_tables.CorporateQuote.per <= 5))
             .filter((0.5 <= data_tables.CorporateQuote.pbr) & (data_tables.CorporateQuote.pbr <= 5))
+            .order_by(data_tables.CorporateQuote.rate.desc())
             .all()
         )
 
