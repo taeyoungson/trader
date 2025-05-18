@@ -5,7 +5,7 @@ from core.db import utils as db_utils
 from core.finance.dart import request as dart_request
 from core.scheduler import instance
 from core.scheduler import jobs
-from trade.data import tables
+from trading.database.finance import tables
 
 
 @instance.DefaultBackgroundScheduler.scheduled_job(

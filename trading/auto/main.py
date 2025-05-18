@@ -10,7 +10,7 @@ from core.finance.kis import trader
 # from core.scheduler import instance
 # from core.scheduler import jobs
 from core.utils import time as time_utils
-from trade.advisor import tables as advisor_tables
+from trading.database.trade import tables as advisor_tables
 
 _TRADER = None
 

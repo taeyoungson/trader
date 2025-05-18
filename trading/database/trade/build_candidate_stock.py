@@ -9,9 +9,9 @@ from core.finance.kis import trader
 from core.scheduler import instance
 from core.scheduler import jobs
 from core.utils import time as time_utils
-from trade.advisor import chatbot
-from trade.advisor import tables as advisor_tables
-from trade.data import tables as data_tables
+from trading.auto import llm
+from trading.database.finance import tables as data_tables
+from trading.database.trade import tables as advisor_tables
 
 _PRICE_PATTERN = re.compile(r"\[\[(\w+):\s*([\d\.]+)\]\]")
 
@@ -20,7 +20,7 @@ _PRICE_PATTERN = re.compile(r"\[\[(\w+):\s*([\d\.]+)\]\]")
     jobs.TriggerType.CRON, id="build_candidate_stock", day_of_week="0, 1, 2, 3, 4", hour=7
 )
 def build_candidate_stock(read_database: str = "finance", write_database: str = "trade"):
-    bot = chatbot.load_financial_bot()
+    bot = llm.load_financial_bot()
     kis_trader = trader.get_trader(False)
     candidates = []
     with session.get_database_session(read_database) as db_session:
@@ -103,3 +103,7 @@ def build_candidate_stock(read_database: str = "finance", write_database: str = 
         db_session.add_all(candidates)
 
     logger.info(f"Uploaded {len(candidates)} items to {write_database}.{advisor_tables.StockCandidate.__tablename__}")
+
+
+if __name__ == "__main__":
+    build_candidate_stock()
