@@ -26,4 +26,13 @@ class StockCandidate(Base):
     date = Column(String(10))
 
 
+class Purchase(Base):
+    __tablename__ = "purchase"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    buy_price = Column(Float)
+    target_price = Column(Float)
+    stop_price = Column(Float)
+
+
 session.register_tables(Base, database=_DATABASE)

@@ -103,7 +103,3 @@ def build_candidate_stock(read_database: str = "finance", write_database: str = 
         db_session.add_all(candidates)
 
     logger.info(f"Uploaded {len(candidates)} items to {write_database}.{advisor_tables.StockCandidate.__tablename__}")
-
-
-if __name__ == "__main__":
-    build_candidate_stock()

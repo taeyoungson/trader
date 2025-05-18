@@ -1,6 +1,7 @@
 import time
 
 from core.scheduler import instance
+from trading import auto  # noqa: F401
 from trading import database  # noqa: F401
 
 
