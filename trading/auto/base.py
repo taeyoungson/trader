@@ -4,7 +4,7 @@ import pydantic
 
 from core.db import session
 from core.discord import utils as discord_utils
-from core.finance.kis import trader
+from core.finance.kis import client as kis_client
 from core.utils import time as time_utils
 from trading.database.trade import tables as advisor_tables
 
@@ -22,7 +22,6 @@ class AutoTraderBase(abc.ABC):
     _trade_database: str = "trade"
     _candidates: list[StockCandidate] = []
     _stocks: list
-    _trader = trader.get_trader(use_virtual_trade=False)
 
     _target_profit: int
 
@@ -74,7 +73,7 @@ class AutoTraderBase(abc.ABC):
                 .all()
             )
             for c in candidates[:5]:
-                stock = self._trader.stock(c.stock_code)
+                stock = kis_client.get_stock(c.stock_code)
 
                 # currenlty, just buy 1 qty
                 stock.buy(qty=1, price=c.buy_price)
@@ -88,18 +87,18 @@ class AutoTraderBase(abc.ABC):
                 )
 
     def _set_sell_order(self) -> None:
-        balance = self._trader.account.balance()
+        balance = kis_client.get_account().balance()
         self._stocks = balance.stocks
 
         for s in self._stocks:
-            stock = self._trader.stock(s.symbol)
+            stock = kis_client.get_stock(s.symbol)
             stock.sell(qty=s.quantity, price=s.price * ((100 + self._target_profit) / 100))
 
     def register_orders(self) -> None:
-        self._set_sell_order()
+        self._set_sellgd_order()
         self._set_buy_order()
         self._update_to_discord()
 
     def cancel_orders(self) -> None:
-        for order in self._trader.account.pending_orders():
+        for order in kis_client.get_account().pending_orders():
             order.cancel()
