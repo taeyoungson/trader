@@ -2,6 +2,8 @@
 
 This project is an automated trading bot that leverages a Large Language Model (LLM) to analyze and trade stocks on the Korea Exchange (KRX) using the Korea Investment & Securities (KIS) API.
 
+![stock candidates example](./assets/candidate.png)
+
 ***
 
 ### How It Works
