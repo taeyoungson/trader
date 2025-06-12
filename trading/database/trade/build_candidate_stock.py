@@ -1,7 +1,7 @@
 import re
-import pandas as pd
 
 from loguru import logger
+import pandas as pd
 
 from core.db import session
 from core.discord import utils as discord_utils
@@ -10,9 +10,9 @@ from core.finance.kis import client as kis_client
 from core.scheduler import instance
 from core.scheduler import jobs
 from core.utils import time as time_utils
-from trading.auto import llm
 from trading.database.finance import tables as data_tables
 from trading.database.trade import tables as advisor_tables
+from trading.model import llm
 
 _PRICE_PATTERN = re.compile(r"\[\[(\w+):\s*([\d\.]+)\]\]")
 
@@ -42,7 +42,6 @@ def _summarize_chart(chart) -> str:
         return pd.DataFrame(columns=columns).to_csv()
 
     return pd.concat(rows).to_csv()
-
 
 
 @instance.DefaultBackgroundScheduler.scheduled_job(

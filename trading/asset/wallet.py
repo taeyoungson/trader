@@ -22,13 +22,16 @@ class KISWallet(WalletBase):
         return self._account.pending_orders()
 
     @property
-    def stocks(self):
-        return self._account.stocks()
+    def holding_stocks(self):
+        stocks = self.balance.stocks
+        return {s.symbol: s for s in stocks}
 
-    def bullets(self, currency: model_type.Currency) -> KisBalance:
+    def money(self, currency: model_type.Currency) -> KisBalance:
         return self.balance.deposit(currency.value)
 
 
+_KIS_WALLET = KISWallet()
 
-def load_kis_wallet() -> KISWallet:
-    return KISWallet()
+
+def get_kis_wallet() -> KISWallet:
+    return _KIS_WALLET
