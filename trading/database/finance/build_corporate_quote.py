@@ -4,7 +4,7 @@ import tqdm
 
 from core.db import session
 from core.db import utils as db_utils
-from core.finance.kis import trader
+from core.finance.kis import client as kis_client
 from core.scheduler import instance
 from core.scheduler import jobs
 from trading.database.finance import tables
@@ -18,10 +18,9 @@ def build_corporate_quote(database: str = "finance", market: str = "KRX"):
     with session.get_database_session(database) as db_session:
         corps_with_stock_codes = db_session.query(tables.CorporateInfo).filter(tables.CorporateInfo.stock_code).all()
 
-        kis_trader = trader.get_trader(use_virtual_trade=False)
         for corp in tqdm.tqdm(corps_with_stock_codes, desc="Getting quote data..."):
             try:
-                quote = kis_trader.quote(corp.stock_code, market)
+                quote = kis_client.get_quote(corp.stock_code, market)
 
             except exceptions.KisNotFoundError:
                 logger.warning(f"corp {corp.corp_name} with code {corp.stock_code} not found")

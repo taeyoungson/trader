@@ -6,6 +6,7 @@ class Config(pydantic_settings.BaseSettings):
     account: str
     app_key: str
     secret_key: str
+    use_virtual_trade: bool = False
 
     virtual_id: str
     virtual_account: str

@@ -1,19 +1,47 @@
 import re
 
 from loguru import logger
+import pandas as pd
 
 from core.db import session
 from core.discord import utils as discord_utils
 from core.finance.dart import request as dart_request
-from core.finance.kis import trader
+from core.finance.kis import client as kis_client
 from core.scheduler import instance
 from core.scheduler import jobs
 from core.utils import time as time_utils
-from trading.auto import llm
 from trading.database.finance import tables as data_tables
 from trading.database.trade import tables as advisor_tables
+from trading.model import llm
 
 _PRICE_PATTERN = re.compile(r"\[\[(\w+):\s*([\d\.]+)\]\]")
+
+
+def _summarize_chart(chart) -> str:
+    rows = []
+    if chart and chart.bars:
+        for b in chart.bars:
+            rows.append(
+                pd.DataFrame(
+                    {
+                        "Time": b.time,
+                        "Open": b.open,
+                        "High": b.high,
+                        "Low": b.low,
+                        "Close": b.close,
+                        "Volume": b.volume,
+                        "Amount": b.amount,
+                        "Change": b.change,
+                    },
+                    index=[0],
+                )
+            )
+
+    if not rows:
+        columns = ["Time", "Open", "High", "Low", "Close", "Volume", "Amount", "Change"]
+        return pd.DataFrame(columns=columns).to_csv()
+
+    return pd.concat(rows).to_csv()
 
 
 @instance.DefaultBackgroundScheduler.scheduled_job(
@@ -21,7 +49,6 @@ _PRICE_PATTERN = re.compile(r"\[\[(\w+):\s*([\d\.]+)\]\]")
 )
 def build_candidate_stock(read_database: str = "finance", write_database: str = "trade"):
     bot = llm.load_financial_bot()
-    kis_trader = trader.get_trader(False)
     candidates = []
     with session.get_database_session(read_database) as db_session:
         corp_quotes = (
@@ -49,10 +76,12 @@ def build_candidate_stock(read_database: str = "finance", write_database: str = 
             stock_code = info_obj.stock_code
 
             finance_report_df = dart_request.get_financial_report(corp_code).as_dataframe()
-            chart_data_csv = kis_trader.chart_summary(
-                stock_code,
-                start=time_utils.get_months_before(now, 6),
-                end=now,
+            chart_data_csv = _summarize_chart(
+                kis_client.get_chart(
+                    stock_code,
+                    start=time_utils.get_months_before(now, 6),
+                    end=now,
+                )
             )
             quote_summary_text = quote_obj.summary()
 
