@@ -20,7 +20,7 @@ def build_corporate_quote(database: str = "finance", market: str = "KRX"):
 
         for corp in tqdm.tqdm(corps_with_stock_codes, desc="Getting quote data..."):
             try:
-                quote = kis_client.get_quote(corp.stock_code, market)
+                quote = kis_client.get_quote(corp.stock_code)
 
             except exceptions.KisNotFoundError:
                 logger.warning(f"corp {corp.corp_name} with code {corp.stock_code} not found")
