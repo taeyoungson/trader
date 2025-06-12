@@ -26,7 +26,7 @@ class KISWallet(WalletBase):
         stocks = self.balance.stocks
         return {s.symbol: s for s in stocks}
 
-    def money(self, currency: model_type.Currency) -> KisBalance:
+    def deposit(self, currency: model_type.Currency) -> KisBalance:
         return self.balance.deposit(currency.value)
 
 

@@ -6,9 +6,12 @@ import overrides
 
 from core.db import session
 from core.finance.kis import client as kis_client
+from core.scheduler import instance
+from core.scheduler import jobs
 from core.utils import time as time_utils
 from trading.asset import wallet as wallet_asset
 from trading.database.trade import tables as trade_tables
+from trading.model import type as model_type
 from trading.runners import base as runner_base
 from trading.strategy import base as strategy_base
 
@@ -22,10 +25,10 @@ class Candidate:
 
 
 class Strategy(strategy_base.StrategyBase):
-    def is_buyable(self, wallet: wallet_asset, price: float) -> bool:
-        return True
+    def is_buyable(self, wallet: wallet_asset.KISWallet, price: float) -> bool:
+        return wallet.deposit(model_type.Currency.KRW) > price
 
-    def is_sellable(self, wallet: wallet_asset, price: float) -> bool:
+    def is_sellable(self, wallet: wallet_asset.KISWallet, price: float) -> bool:
         return True
 
 
@@ -141,3 +144,25 @@ class Runner(runner_base.AutoTraderBase):
                         self._current_candidates.remove(c)
 
             time.sleep(self._period)
+
+
+_runner: Runner = None
+
+
+@instance.DefaultBackgroundScheduler.scheduled_job(
+    jobs.TriggerType.CRON, id="krx_trader_start", day_of_week="0, 1, 2, 3, 4", hour=9
+)
+def run_krx_trader() -> None:
+    global _runner
+    _runner = Runner(strategy=Strategy(), wallet=wallet_asset.get_kis_wallet())
+    _runner.start()
+
+
+@instance.DefaultBackgroundScheduler.scheduled_job(
+    jobs.TriggerType.CRON, id="krx_trader_shutdown", day_of_week="0, 1, 2, 3, 4", hour=15, minute=30
+)
+def stop_krx_trader() -> None:
+    global _runner
+    assert _runner is not None, "runner is none"
+    _runner.end()
+    _runner = None
