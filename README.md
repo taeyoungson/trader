@@ -39,3 +39,39 @@ The bot operates in a fully automated, multi-stage cycle, preparing data and exe
     -   **Data Handling**: Pandas
     -   **Database**: SQLAlchemy, mysqlclient
 -   **Development**: Ruff, Pytest
+
+#### **Installation & Setup**
+
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/taeyoungson/trader.git](https://github.com/taeyoungson/trader.git)
+    cd trader
+    ```
+
+2.  **Create and activate the virtual environment using `uv`:**
+    ```bash
+    uv venv
+    source .venv/bin/activate
+    ```
+
+3.  **Install dependencies from `pyproject.toml`:**
+    ```bash
+    uv pip install -e .
+    ```
+
+4.  **Configure Environment:**
+    -   Set up your environment variables for the database connection, KIS API keys, and OpenAI API key into `.env` file.
+
+#### **Running the Bot**
+
+-   Launch the main application to start the background scheduler.
+    ```bash
+    # if you set up your python environment successfully,
+    python -m core.scheduler
+    
+    # if not
+    uv run python -m core.scheduler
+    ```
+
+The scheduler will then handle the daily execution of the entire data pipeline and trading logic.
+
