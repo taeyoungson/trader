@@ -1,13 +1,9 @@
 import dataclasses
-import threading
-import time
 
 import overrides
 
 from core.db import session
 from core.finance.kis import client as kis_client
-from core.scheduler import instance
-from core.scheduler import jobs
 from core.utils import time as time_utils
 from trading.asset import wallet as wallet_asset
 from trading.database.trade import tables as trade_tables
@@ -32,7 +28,7 @@ class Strategy(strategy_base.StrategyBase):
         return True
 
 
-class Runner(runner_base.AutoTraderBase):
+class Runner(runner_base.PeriodicTrader):
     _name: str = "krx_trader"
 
     def __init__(
@@ -61,9 +57,9 @@ class Runner(runner_base.AutoTraderBase):
         self._current_holdings = {}
         self._current_candidates: list[Candidate] = []
 
-    def _load_candidates(self) -> list:
+    def _load_candidates(self) -> None:
         self._current_candidates = []
-        with session.get_database_session(self._trade_database) as db_session:
+        with session.get_database_session(self._database) as db_session:
             candidates = (
                 db_session.query(trade_tables.StockCandidate)
                 .filter(trade_tables.StockCandidate.date == time_utils.now().strftime("%Y-%m-%d"))
@@ -129,40 +125,34 @@ class Runner(runner_base.AutoTraderBase):
         stock.sell(qty=stock.qty, price=sell_price)
 
     @overrides.override
-    def monitor_loop(self, stop_event: threading.Event):
-        while not stop_event.is_set():
-            self._logger.debug("Inside Monitor Loop...")
-            self._update_holdings()
+    def start(self) -> None:
+        self._on_startup()
+        self._update_holdings()
 
-            # check if any stock in candidate worth buying
-            if len(self._current_holdings) < self._num_max_stock:
-                for c in self._current_candidates:
-                    quote = kis_client.get_quote(c.stock_code)
-                    if quote.price <= c.buy_at:
-                        quantity = max(1, self._max_buy_amount // quote.price)
-                        self._buy(c.stock_code, buy_price=c.buy_at, quantity=quantity)
-                        self._current_candidates.remove(c)
+        num_to_buy_stock = max(self._num_max_stock - len(self._current_holdings), 0)
 
-            time.sleep(self._period)
+        for c in self._current_candidates[:num_to_buy_stock]:
+            quote = kis_client.get_quote(c.stock_code)
+            if quote.price <= c.buy_at:
+                quantity = max(1, self._max_buy_amount // quote.price)
+                self._buy(c.stock_code, buy_price=c.buy_at, quantity=quantity)
 
-
-_runner: Runner = None
+    @overrides.override
+    def end(self) -> None:
+        pass
 
 
-@instance.DefaultBackgroundScheduler.scheduled_job(
-    jobs.TriggerType.CRON, id="krx_trader_start", day_of_week="0, 1, 2, 3, 4", hour=9
-)
+_RUNNER: Runner | None = None
+
+
 def run_krx_trader() -> None:
-    global _runner
-    _runner = Runner(strategy=Strategy(), wallet=wallet_asset.get_kis_wallet())
-    _runner.start()
+    global _RUNNER
+    _RUNNER = Runner(strategy=Strategy(), wallet=wallet_asset.get_kis_wallet())
+    _RUNNER.start()
 
 
-@instance.DefaultBackgroundScheduler.scheduled_job(
-    jobs.TriggerType.CRON, id="krx_trader_shutdown", day_of_week="0, 1, 2, 3, 4", hour=15, minute=30
-)
 def stop_krx_trader() -> None:
-    global _runner
-    assert _runner is not None, "runner is none"
-    _runner.end()
-    _runner = None
+    global _RUNNER
+    assert _RUNNER is not None, "runner is none"
+    _RUNNER.end()
+    _RUNNER = None

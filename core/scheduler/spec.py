@@ -7,7 +7,7 @@ from core.db import session as mysql_session
 _SCHEDULER_DB = "apscheduler"
 
 JOBSTORES = {
-    "memory": memory.MemoryJobStore(),
+    "mysql": memory.MemoryJobStore(),
     "default": sqlalchemy.SQLAlchemyJobStore(
         url=mysql_config.load_config().dsn,
         engine=mysql_session.get_or_create_engine(_SCHEDULER_DB),

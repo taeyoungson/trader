@@ -1,0 +1,34 @@
+services:
+  db:
+    image: mysql:8.0
+    command:
+      - --default-authentication-plugin=mysql_native_password
+    volumes:
+      - ./mysql_conf/custom.cnf:/etc/mysql/conf.d/custom.cnf
+      - ./mysql_init:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Seoul
+
+    ports:
+      - "${MYSQL_PORT}:3306"
+    restart: always
+
+  app:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: finance-advisosr
+    env_file:
+      - ../.env
+    ports:
+      - "8000:80"
+    depends_on:
+      - db
+
+
+volumes:
+  db_data:

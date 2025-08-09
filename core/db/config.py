@@ -11,7 +11,7 @@ class MySqlConfig(pydantic_settings.BaseSettings):
 
     @property
     def dsn(self) -> str:
-        return f"mysql://{self.user}:{self.password}@{self.host}:{self.port}"
+        return f"mysql+pymysql://{self.user}:{self.password}@{self.host}:{self.port}"
 
 
 def load_config() -> MySqlConfig:

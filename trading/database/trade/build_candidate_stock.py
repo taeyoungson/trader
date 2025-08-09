@@ -7,8 +7,7 @@ from core.db import session
 from core.discord import utils as discord_utils
 from core.finance.dart import request as dart_request
 from core.finance.kis import client as kis_client
-from core.scheduler import instance
-from core.scheduler import jobs
+from core.utils import args as args_utils
 from core.utils import time as time_utils
 from trading.database.finance import tables as data_tables
 from trading.database.trade import tables as advisor_tables
@@ -44,10 +43,7 @@ def _summarize_chart(chart) -> str:
     return pd.concat(rows).to_csv()
 
 
-@instance.DefaultBackgroundScheduler.scheduled_job(
-    jobs.TriggerType.CRON, id="build_candidate_stock", day_of_week="0, 1, 2, 3, 4", hour=7
-)
-def build_candidate_stock(read_database: str = "finance", write_database: str = "trade"):
+def main(read_database: str = "finance", write_database: str = "trade"):
     bot = llm.load_financial_bot()
     candidates = []
     with session.get_database_session(read_database) as db_session:
@@ -75,7 +71,12 @@ def build_candidate_stock(read_database: str = "finance", write_database: str = 
             corp_code = info_obj.corp_code
             stock_code = info_obj.stock_code
 
-            finance_report_df = dart_request.get_financial_report(corp_code).as_dataframe()
+            finance_report = dart_request.get_financial_report(corp_code)
+            if not finance_report:
+                continue
+
+            finance_report_df = finance_report.as_dataframe()
+
             chart_data_csv = _summarize_chart(
                 kis_client.get_chart(
                     stock_code,
@@ -133,3 +134,8 @@ def build_candidate_stock(read_database: str = "finance", write_database: str = 
         db_session.add_all(candidates)
 
     logger.info(f"Uploaded {len(candidates)} items to {write_database}.{advisor_tables.StockCandidate.__tablename__}")
+
+
+if __name__ == "__main__":
+    opts = args_utils.BasicDBTaskArguments().parse()
+    main(read_database=opts.database)

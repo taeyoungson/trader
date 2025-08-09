@@ -1,20 +1,16 @@
 from sqlalchemy import Column
 from sqlalchemy import Float
 from sqlalchemy import Integer
-from sqlalchemy import orm
 from sqlalchemy import String
 
-from core.db import session
+from trading.database import base
 
 _DATABASE: str = "trade"
 
 
-class Base(orm.DeclarativeBase):
-    pass
-
-
-class StockCandidate(Base):
+class StockCandidate(base.Base):
     __tablename__ = "candidate_stock"
+    __bind_key__ = _DATABASE
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     corp_code = Column(String(8))
@@ -26,13 +22,11 @@ class StockCandidate(Base):
     date = Column(String(10))
 
 
-class Purchase(Base):
+class Purchase(base.Base):
     __tablename__ = "purchase"
+    __bind_key__ = _DATABASE
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     buy_price = Column(Float)
     target_price = Column(Float)
     stop_price = Column(Float)
-
-
-session.register_tables(Base, database=_DATABASE)
