@@ -1,0 +1,10 @@
+.venv
+.idea
+.husky
+.git
+.env
+.DS_Store
+__pycache__/
+.pytest_cache/
+ruff.toml
+Makefile

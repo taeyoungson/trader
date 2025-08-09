@@ -1,9 +1,14 @@
+import time
+
 from loguru import logger
 import pykis
+from pykis.responses import exceptions
+from requests import exceptions as request_exceptions
 
 from core.finance.kis import config as kis_config
 
 _PYKIS_CLIENT = None
+_DELAY = 0.2
 
 
 def _load_client() -> pykis.PyKis:
@@ -35,13 +40,50 @@ def get_account() -> pykis.KisAccount:
     return _load_client().account()
 
 
-def get_stock(symbol: str) -> pykis.KisStock:
-    return _load_client().stock(symbol)
+def get_stock(symbol: str) -> pykis.KisStock | None:
+    delay = _DELAY
+    try:
+        while True:
+            try:
+                return _load_client().stock(symbol)
+            except request_exceptions.ConnectionError:
+                time.sleep(delay)
+                delay *= 2
+    except exceptions.KisNotFoundError:
+        return None
 
 
-def get_quote(symbol: str) -> pykis.KisQuote:
-    return _load_client().stock(symbol).quote()
+def get_quote(symbol: str) -> pykis.KisQuote | None:
+    stock = get_stock(symbol)
+
+    if not stock:
+        return None
+
+    delay = _DELAY
+    try:
+        while True:
+            try:
+                return stock.quote()
+            except request_exceptions.ConnectionError:
+                time.sleep(delay)
+                delay *= 2
+    except Exception as e:
+        raise e
 
 
-def get_chart(symbol: str, *args, **kwargs) -> pykis.KisChart:
-    return _load_client().stock(symbol).chart(*args, **kwargs)
+def get_chart(symbol: str, *args, **kwargs) -> pykis.KisChart | None:
+    stock = get_stock(symbol)
+
+    if not stock:
+        return None
+
+    delay = _DELAY
+    try:
+        while True:
+            try:
+                return stock.chart(*args, **kwargs)
+            except request_exceptions.ConnectionError:
+                time.sleep(delay)
+                delay *= 2
+    except Exception as e:
+        raise e

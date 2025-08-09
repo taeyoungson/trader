@@ -4,20 +4,16 @@ from sqlalchemy import Column
 from sqlalchemy import Date
 from sqlalchemy import Float
 from sqlalchemy import Integer
-from sqlalchemy import orm
 from sqlalchemy import String
 
-from core.db import session
+from trading.database import base
 
 _DATABASE: str = "finance"
 
 
-class Base(orm.DeclarativeBase):
-    pass
-
-
-class CorporateInfo(Base):
+class CorporateInfo(base.Base):
     __tablename__ = "corporate_info"
+    __bind_key__ = _DATABASE
 
     corp_code = Column(String(8), primary_key=True)
     corp_name = Column(String(150))
@@ -26,8 +22,9 @@ class CorporateInfo(Base):
     modify_date = Column(String(8))
 
 
-class CorporateQuote(Base):
+class CorporateQuote(base.Base):
     __tablename__ = "corporate_quote"
+    __bind_key__ = _DATABASE
 
     symbol = Column(String(6), primary_key=True)
     market = Column(String(10))
@@ -93,6 +90,3 @@ class CorporateQuote(Base):
             f"52-Week Low: {self.week52_low} (on {self.week52_low_date})",
         ]
         return "\n".join(summary_lines)
-
-
-session.register_tables(Base, database=_DATABASE)

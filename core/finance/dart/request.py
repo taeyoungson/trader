@@ -74,7 +74,7 @@ def get_financial_report(
     num_requests_reports: int = 2,
     fs_div: model.ReportType = model.ReportType.CONSOLIDATED.value,
     url_key: str = "finance",
-) -> model.FinancialReport:
+) -> model.FinancialReport | None:
     crtfc_key = _load_crtfc_key()
 
     year = time_utils.now().year
@@ -111,4 +111,5 @@ def get_financial_report(
 
             except (requests.exceptions.RequestException, KeyError) as e:
                 raise e
-    raise ValueError(f"Failed to load financial report for corp_code: {corp_code}")
+    logger.warning(f"Failed to load financial report for corp_code: {corp_code}")
+    return None

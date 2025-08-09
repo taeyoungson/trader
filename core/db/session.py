@@ -7,21 +7,29 @@ from core.db import config
 
 _engines: dict[str, sqlalchemy.Engine] = {}
 
+_POOL_SIZE = 10
+_POOL_TIMEOUT = 60
+_POOL_RECYCLE = 3600
 
-def get_or_create_engine(database: str) -> sqlalchemy.Engine:
+
+def get_or_create_engine(database: str, echo: bool = False) -> sqlalchemy.Engine:
+    global _engines
+
     if database not in _engines:
         db_config = config.load_config()
         dsn = db_config.dsn.rstrip("/")
         db_name = database.lstrip("/")
         url = f"{dsn}/{db_name}"
-        _engines[database] = sqlalchemy.create_engine(url, echo=True)
+
+        _engines[database] = sqlalchemy.create_engine(
+            url,
+            echo=echo,
+            pool_size=_POOL_SIZE,
+            pool_timeout=_POOL_TIMEOUT,
+            pool_recycle=_POOL_RECYCLE,
+        )
+
     return _engines[database]
-
-
-def register_tables(tables_base: orm.DeclarativeBase, database: str):
-    engine = get_or_create_engine(database)
-    tables_base.metadata.create_all(engine)
-    print(f"Tables registered/ensured in database '{database}'.")
 
 
 @contextlib.contextmanager

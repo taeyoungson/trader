@@ -1,10 +1,13 @@
 import time
 
 from core.scheduler import instance
+from trading import jobs
 
 
 def main():
     instance.DefaultBackgroundScheduler.start()
+    jobs.register_jobs()
+
     try:
         while True:
             time.sleep(5)

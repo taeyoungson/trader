@@ -1,29 +1,23 @@
 from loguru import logger
-from pykis.responses import exceptions
 import tqdm
 
 from core.db import session
 from core.db import utils as db_utils
 from core.finance.kis import client as kis_client
-from core.scheduler import instance
-from core.scheduler import jobs
+from core.utils import args as args_utils
 from trading.database.finance import tables
 
 
-@instance.DefaultBackgroundScheduler.scheduled_job(
-    jobs.TriggerType.CRON, id="build_corportate_quote", day_of_week="0, 1, 2, 3, 4", hour=16
-)
-def build_corporate_quote(database: str = "finance", market: str = "KRX"):
+def main(database: str = "finance"):
     corp_quotes = []
     with session.get_database_session(database) as db_session:
         corps_with_stock_codes = db_session.query(tables.CorporateInfo).filter(tables.CorporateInfo.stock_code).all()
 
+        logger.info(f"Getting quotes for the number of {len(corps_with_stock_codes)} companies")
         for corp in tqdm.tqdm(corps_with_stock_codes, desc="Getting quote data..."):
-            try:
-                quote = kis_client.get_quote(corp.stock_code)
+            quote = kis_client.get_quote(corp.stock_code)
 
-            except exceptions.KisNotFoundError:
-                logger.warning(f"corp {corp.corp_name} with code {corp.stock_code} not found")
+            if not quote:
                 continue
 
             quote_data = {
@@ -73,3 +67,8 @@ def build_corporate_quote(database: str = "finance", market: str = "KRX"):
         conn.execute(upsert_stmt)
 
     logger.info(f"Upserted {len(corp_quotes)} items to {database}.{tables.CorporateQuote.__tablename__}")
+
+
+if __name__ == "__main__":
+    task_args = args_utils.BasicDBTaskArguments().parse()
+    main(task_args.database)

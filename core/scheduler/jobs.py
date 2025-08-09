@@ -26,6 +26,10 @@ class TriggerMixin:
         assert self._trigger, "Trigger Type is not set"
         return self._trigger.value
 
+    @property
+    def ctx_kwargs(self) -> dict:
+        return self._ctx_kwargs
+
 
 class BaseJob:
     def __init__(self, func: Callable, *args, **kwargs):
@@ -50,7 +54,9 @@ class BaseJob:
         return self.id
 
 
-class DefaultJob(BaseJob, TriggerMixin):
-    @property
-    def ctx_kwargs(self) -> dict:
-        return self._ctx_kwargs
+class TradeJob(BaseJob, TriggerMixin):
+    """Job class for trade"""
+
+
+class RunnerJob(BaseJob, TriggerMixin):
+    """Job class for trade"""

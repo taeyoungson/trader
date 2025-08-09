@@ -4,8 +4,8 @@ from langchain import chat_models
 from langchain_core import messages
 from overrides import overrides
 
-from . import config as llm_config
-from . import models as llm_models
+from core.bot import config as llm_config
+from core.bot import models as llm_models
 
 
 class BaseChatClient(abc.ABC):
@@ -17,11 +17,11 @@ class BaseChatClient(abc.ABC):
         return self._system_prompt
 
     @system_prompt.setter
-    def system_prompt(self, prompt: str) -> str:
+    def system_prompt(self, prompt: str) -> None:
         self._system_prompt = prompt
 
     @abc.abstractmethod
-    def invoke(self, message: str) -> messages.AIMessage:
+    def invoke(self, message: str) -> messages.BaseMessage:
         pass
 
 
@@ -37,7 +37,7 @@ class OpenAIChatClient(BaseChatClient):
         )
 
     @overrides
-    def invoke(self, message: str) -> messages.AIMessage:
+    def invoke(self, message: str) -> messages.BaseMessage:
         return self._model.invoke(
             [
                 messages.SystemMessage(self._system_prompt),
