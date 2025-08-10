@@ -1,10 +1,10 @@
 from logging.config import fileConfig
 import os
 
+from alembic import context
+import dotenv
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
-from alembic import context
 
 # my table definition starts
 from trading.database import base
@@ -15,15 +15,14 @@ from trading.database import base
 # access to the values within the .ini file in use.
 config = context.config
 
+dotenv.load_dotenv(".env")
 
 MYSQL_USER = os.getenv("MYSQL_USER")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 MYSQL_HOST = os.getenv("MYSQL_HOST")
 MYSQL_PORT = os.getenv("MYSQL_PORT")
-MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
+MYSQL_DATABASE = "trade"
 
-# 완성된 DB URL을 Alembic 설정에 직접 주입합니다.
-# 이렇게 하면 alembic.ini의 sqlalchemy.url 값을 덮어쓰게 됩니다.
 db_url = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
 config.set_main_option("sqlalchemy.url", db_url)
 

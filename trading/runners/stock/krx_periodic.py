@@ -4,6 +4,7 @@ import overrides
 
 from core.db import session
 from core.finance.kis import client as kis_client
+from core.utils import indicator as indicator_utils
 from core.utils import time as time_utils
 from trading.asset import wallet as wallet_asset
 from trading.database.trade import tables as trade_tables
@@ -13,40 +14,37 @@ from trading.strategy import base as strategy_base
 
 
 @dataclasses.dataclass
-class Candidate:
+class TradeObject:
     stock_code: str
-    buy_at: float
-    sell_at: float
-    stop_at: float
+    support_price: int
+    resistance_price: int
 
 
 class Strategy(strategy_base.StrategyBase):
     def is_buyable(self, wallet: wallet_asset.KISWallet, price: float) -> bool:
-        return wallet.deposit(model_type.Currency.KRW) > price
+        return wallet.deposit(model_type.Currency.KRW).amount > price
 
     def is_sellable(self, wallet: wallet_asset.KISWallet, price: float) -> bool:
         return True
 
 
 class Runner(runner_base.PeriodicTrader):
+    _current_candidates: list = []
+    _current_holdings: dict = {}
     _name: str = "krx_trader"
 
     def __init__(
         self,
         strategy: strategy_base.StrategyBase,
         wallet: wallet_asset.KISWallet,
-        take_profit_at: float = 0.05,
-        stop_loss_at: float = 0.03,
-        verbose: bool = True,
         num_candidates: int = 10,
         period: int = 60,
         max_buy_amount: int = 100_000,
         num_max_stock: int = 10,
+        verbose: bool = True,
     ):
         super().__init__()
         self._strategy = strategy
-        self._take_profit_at = take_profit_at
-        self._stop_loss_at = stop_loss_at
         self._wallet = wallet
         self._verbose = verbose
         self._num_candidates = num_candidates
@@ -54,25 +52,33 @@ class Runner(runner_base.PeriodicTrader):
         self._max_buy_amount = max_buy_amount
         self._num_max_stock = num_max_stock
 
-        self._current_holdings = {}
-        self._current_candidates: list[Candidate] = []
-
     def _load_candidates(self) -> None:
-        self._current_candidates = []
         with session.get_database_session(self._database) as db_session:
             candidates = (
                 db_session.query(trade_tables.StockCandidate)
                 .filter(trade_tables.StockCandidate.date == time_utils.now().strftime("%Y-%m-%d"))
                 .filter(trade_tables.StockCandidate.stock_code.not_in(self._current_holdings))
+                .filter(trade_tables.StockCandidate.growth_score >= 5)
+                .filter(trade_tables.StockCandidate.financial_stability_score >= 5)
+                .filter(trade_tables.StockCandidate.valuation_attractiveness.in_(["Undervalued", "Fairly valued"]))
+                .filter(
+                    trade_tables.StockCandidate.technical_signal.in_(
+                        [
+                            "Golden Cross Occured",
+                            "Entering Oversold Territory",
+                            "Range Bound Movement",
+                            "Approaching Key Support",
+                        ]
+                    )
+                )
                 .all()
             )
             for c in candidates[: self._num_candidates]:
                 self._current_candidates.append(
-                    Candidate(
+                    TradeObject(
                         stock_code=c.stock_code,
-                        buy_at=c.buy_price,
-                        sell_at=c.target_price,
-                        stop_at=c.stop_price,
+                        support_price=c.support_price,
+                        resistance_price=c.resistance_price,
                     )
                 )
 
@@ -110,7 +116,7 @@ class Runner(runner_base.PeriodicTrader):
     def _make_buy_order(self, symbol: str, buy_price: float, quantity: int) -> None:
         stock = kis_client.get_stock(symbol)
         if self._strategy.is_buyable(self._wallet, buy_price * quantity):
-            stock.buy(qty=quantity, price=buy_price)
+            kis_client.buy(stock=stock, qty=quantity, price=buy_price)
         else:
             self._logger.debug(f"Not buying stock {symbol}")
 
@@ -133,9 +139,17 @@ class Runner(runner_base.PeriodicTrader):
 
         for c in self._current_candidates[:num_to_buy_stock]:
             quote = kis_client.get_quote(c.stock_code)
-            if quote.price <= c.buy_at:
-                quantity = max(1, self._max_buy_amount // quote.price)
-                self._buy(c.stock_code, buy_price=c.buy_at, quantity=quantity)
+
+            if not quote:
+                continue
+
+            target_prices = indicator_utils.get_finbonacci_fallback(c.support_price, c.resistance_price)
+
+            # currently, just use 0.236
+            if quote.price <= target_prices[0]:
+                price = min(quote.price, target_prices[0])
+                quantity = max(1, self._max_buy_amount // price)
+                self._buy(c.stock_code, buy_price=price, quantity=quantity)
 
     @overrides.override
     def end(self) -> None:

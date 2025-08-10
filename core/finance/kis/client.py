@@ -1,4 +1,6 @@
+import functools
 import time
+from typing import Callable
 
 from loguru import logger
 import pykis
@@ -36,54 +38,59 @@ def _load_client() -> pykis.PyKis:
     return _PYKIS_CLIENT
 
 
-def get_account() -> pykis.KisAccount:
-    return _load_client().account()
+def make_delayed_request_until_succeeds(fn: Callable):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        delay = _DELAY
+        try:
+            while True:
+                try:
+                    return fn(*args, **kwargs)
+                except request_exceptions.ConnectionError:
+                    time.sleep(delay)
+                    delay *= 2
+                except exceptions.KisNotFoundError:
+                    return None
+        except Exception as e:
+            raise e
+
+    return wrapper
 
 
-def get_stock(symbol: str) -> pykis.KisStock | None:
-    delay = _DELAY
+def buy(stock: pykis.KisStock, *args, **kwargs):
     try:
-        while True:
-            try:
-                return _load_client().stock(symbol)
-            except request_exceptions.ConnectionError:
-                time.sleep(delay)
-                delay *= 2
-    except exceptions.KisNotFoundError:
-        return None
+        stock.buy(*args, **kwargs)
+    except exceptions.KisMarketNotOpenedError:
+        logger.warning("Market not open!")
 
 
+@make_delayed_request_until_succeeds
+def get_account() -> pykis.KisAccount:
+    _client = _load_client()
+    return _client.account()
+
+
+@make_delayed_request_until_succeeds
+def get_stock(symbol: str) -> pykis.KisStock | None:
+    _client = _load_client()
+    return _client.stock(symbol)
+
+
+@make_delayed_request_until_succeeds
 def get_quote(symbol: str) -> pykis.KisQuote | None:
     stock = get_stock(symbol)
 
     if not stock:
         return None
 
-    delay = _DELAY
-    try:
-        while True:
-            try:
-                return stock.quote()
-            except request_exceptions.ConnectionError:
-                time.sleep(delay)
-                delay *= 2
-    except Exception as e:
-        raise e
+    return stock.quote()
 
 
+@make_delayed_request_until_succeeds
 def get_chart(symbol: str, *args, **kwargs) -> pykis.KisChart | None:
     stock = get_stock(symbol)
 
     if not stock:
         return None
 
-    delay = _DELAY
-    try:
-        while True:
-            try:
-                return stock.chart(*args, **kwargs)
-            except request_exceptions.ConnectionError:
-                time.sleep(delay)
-                delay *= 2
-    except Exception as e:
-        raise e
+    return stock.chart(*args, **kwargs)

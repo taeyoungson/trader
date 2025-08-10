@@ -6,6 +6,8 @@ import requests
 
 from core.discord import config as discord_config
 
+_CHAR_LIMIT = 2000
+
 
 def send(message: str, image_url: str | None = None) -> None:
     config = discord_config.load_config()
@@ -32,3 +34,18 @@ def send(message: str, image_url: str | None = None) -> None:
         response.raise_for_status()
     except Exception as e:
         raise RuntimeError(f"Failed to send message to dev: {e}") from e
+
+
+def send_messages(message: str | list[str], character_limit: int = _CHAR_LIMIT) -> None:
+    if isinstance(message, str):
+        message = [message]
+
+    message_chunk = ""
+
+    for i, msg in enumerate(message):
+        if len(message_chunk) + len(msg) > character_limit:
+            send(message_chunk)
+            message_chunk = msg
+
+        else:
+            message_chunk = "\n".join([message_chunk, msg])

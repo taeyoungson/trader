@@ -43,6 +43,7 @@ KRX_PERIODIC_JOBS = [
         trigger=jobs.TriggerType.CRON,
         day_of_week="0, 1, 2, 3, 4",
         hour=9,
+        minute=1,
     ),
     jobs.RunnerJob(
         func=krx_periodic.stop_krx_trader,
@@ -50,7 +51,7 @@ KRX_PERIODIC_JOBS = [
         trigger=jobs.TriggerType.CRON,
         day_of_week="0, 1, 2, 3, 4",
         hour=15,
-        minute=30,
+        minute=31,
     ),
 ]
 
@@ -83,7 +84,7 @@ def register_jobs() -> None:
             args=job.args,
             kwargs=job.kwargs,
             trigger=job.trigger,
-            **job.ctx_kwargs,
+            **job.trigger_kwargs,
         )
         for job in JOBS
     ]

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Callable
+from typing import Callable, Self
 
 
 class TriggerType(enum.StrEnum):
@@ -11,13 +11,12 @@ class TriggerType(enum.StrEnum):
 
 
 class TriggerMixin:
-    def __init__(self):
-        self._trigger = None
-        self._ctx_kwargs = None
+    _trigger: TriggerType
+    _trigger_kwargs: dict
 
-    def add_ctx(self, trigger: TriggerType, **kwargs) -> TriggerMixin:
+    def add_ctx(self, trigger: TriggerType, **kwargs) -> Self:
         self._trigger = trigger
-        self._ctx_kwargs = kwargs
+        self._trigger_kwargs = kwargs
 
         return self
 
@@ -27,8 +26,8 @@ class TriggerMixin:
         return self._trigger.value
 
     @property
-    def ctx_kwargs(self) -> dict:
-        return self._ctx_kwargs
+    def trigger_kwargs(self) -> dict:
+        return self._trigger_kwargs
 
 
 class BaseJob:
