@@ -35,3 +35,32 @@ class BasicDBTaskArguments(ArgumentsBase):
             type=str,
             default=None,
         )
+
+
+class PipelineTaskArguments(BasicDBTaskArguments):
+    """PipelineTaskArguments"""
+
+    @staticmethod
+    @overrides.override
+    def add_arguments(parser: argparse.ArgumentParser):
+        parser.add_argument(
+            "--finance-database",
+            type=str,
+            required=True,
+        )
+
+        parser.add_argument(
+            "--trade-database",
+            type=str,
+            required=True,
+        )
+
+        parser.add_argument(
+            "--top-k",
+            type=int,
+            default=30,
+        )
+
+        parser.add_argument("--skip-info", action="store_true")
+
+        parser.add_argument("--skip-quote", action="store_true")

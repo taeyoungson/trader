@@ -13,6 +13,7 @@ done
 echo "Database started"
 echo "Running database migrations..."
 
-uv run alembic upgrade head
+uv run alembic -c migrations/alembic.finance.ini upgrade head
+uv run alembic -c migrations/alembic.trade.ini upgrade head
 
 exec "$@"

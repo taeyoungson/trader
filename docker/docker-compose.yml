@@ -21,7 +21,7 @@ services:
     build:
       context: ../
       dockerfile: docker/Dockerfile
-    container_name: finance-advisosr
+    container_name: main-app
     env_file:
       - ../.env
     ports:

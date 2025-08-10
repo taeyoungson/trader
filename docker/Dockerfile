@@ -19,4 +19,4 @@ RUN chmod +x /app/bin/entrypoint.sh
 
 ENTRYPOINT ["/app/bin/entrypoint.sh"]
 
-CMD ["uv", "run", "python", "-m", "trading.database.finance.build_corporate_info", "--database", "test"]
+CMD ["uv", "run", "python", "main.py"]

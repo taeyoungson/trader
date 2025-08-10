@@ -4,9 +4,11 @@ from core.db import session
 from core.db import utils as db_utils
 from core.finance.dart import request as dart_request
 from core.utils import args as args_utils
+from core.utils import time as time_utils
 from trading.database.finance import tables
 
 
+@time_utils.timeit
 def main(database: str = "finance"):
     corp_infos = [item.model_dump() for item in dart_request.get_corp_item_lists()]
 

@@ -1,8 +1,12 @@
 import datetime
 import enum
+import functools
+import time
+from typing import Any, Callable
 import zoneinfo
 
 from dateutil import relativedelta
+from loguru import logger
 
 
 class TimeZone(enum.Enum):
@@ -34,3 +38,15 @@ def get_months_before(datetime_: datetime.datetime, months: int) -> datetime.dat
 
 def get_months_after(datetime_: datetime.datetime, months: int) -> datetime.datetime:
     return datetime_ + relativedelta.relativedelta(months=months)
+
+
+def timeit(fn: Callable) -> Any:
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = fn(*args, **kwargs)
+        end = time.perf_counter()
+        logger.info(f"func {fn.__name__} elapsed {end - start:.3f} seconds")
+        return result
+
+    return wrapper

@@ -1,3 +1,4 @@
+import json
 import re
 
 from loguru import logger
@@ -14,6 +15,22 @@ from trading.database.trade import tables as advisor_tables
 from trading.model import llm
 
 _PRICE_PATTERN = re.compile(r"\[\[(\w+):\s*([\d\.]+)\]\]")
+
+
+def _as_json(response: str) -> dict:
+    start_index = response.find("{")
+    end_index = response.find("}")
+
+    advice_dict = json.loads(response[start_index : end_index + 1])
+
+    # parse and cast AI advice
+    for k, v in advice_dict.items():
+        if k == "financial_stability_score":
+            advice_dict[k] = int(v.split("/")[0])
+        if k == "growth_score":
+            advice_dict[k] = int(v.split("/")[0])
+
+    return advice_dict
 
 
 def _summarize_chart(chart) -> str:
@@ -43,9 +60,11 @@ def _summarize_chart(chart) -> str:
     return pd.concat(rows).to_csv()
 
 
-def main(read_database: str = "finance", write_database: str = "trade"):
+@time_utils.timeit
+def main(read_database: str = "finance", write_database: str = "trade", top_k: int = 30):
     bot = llm.load_financial_bot()
     candidates = []
+    raw_responses = []
     with session.get_database_session(read_database) as db_session:
         corp_quotes = (
             db_session.query(data_tables.CorporateQuote, data_tables.CorporateInfo)
@@ -57,14 +76,16 @@ def main(read_database: str = "finance", write_database: str = "trade"):
             .filter(data_tables.CorporateQuote.rate > 0)
             .filter(data_tables.CorporateQuote.risk == "none")
             .filter(data_tables.CorporateQuote.overbought == "0")
-            .filter((0.5 <= data_tables.CorporateQuote.per) & (data_tables.CorporateQuote.per <= 5))
+            .filter((0.5 <= data_tables.CorporateQuote.per) & (data_tables.CorporateQuote.per <= 10))
             .filter((0.5 <= data_tables.CorporateQuote.pbr) & (data_tables.CorporateQuote.pbr <= 5))
-            .order_by(data_tables.CorporateQuote.rate.desc())
+            .filter(data_tables.CorporateQuote.eps / data_tables.CorporateQuote.bps >= 0.1)
+            .order_by(data_tables.CorporateQuote.market_cap.desc())
             .all()
         )
+        logger.info(f"Inspecting {min(len(corp_quotes), top_k)} stocks...")
 
         now = time_utils.now()
-        for quote_obj, info_obj in corp_quotes:
+        for quote_obj, info_obj in corp_quotes[:top_k]:
             if not info_obj or not info_obj.corp_code or not info_obj.stock_code:
                 continue
 
@@ -94,16 +115,7 @@ def main(read_database: str = "finance", write_database: str = "trade"):
             )
 
             response_content = bot.invoke(prompt).content
-
-            data = {}
-            for match in _PRICE_PATTERN.finditer(response_content):
-                price_type = match.group(1)
-                price_value = float(match.group(2))
-                data[price_type] = price_value
-
-            if not data:
-                continue
-
+            data = _as_json(response_content)
             data.update(
                 {
                     "corp_name": info_obj.corp_name,
@@ -112,23 +124,27 @@ def main(read_database: str = "finance", write_database: str = "trade"):
                     "date": now.strftime("%Y-%m-%d"),
                 }
             )
-            candidates.append(advisor_tables.StockCandidate(**data))
 
-        if candidates:
-            discord_message_header = f"📈 **New Stock Candidates for {time_utils.now().strftime('%Y-%m-%d')}** ({len(candidates)} found out of {len(corp_quotes)}) 📈\n"
-            discord_messages = [discord_message_header]
-            for i, c in enumerate(candidates):
-                message = (
-                    f"--- Candidate {i + 1} ---\n"
-                    f"🏢 **Company**: {c.corp_name} ({c.stock_code})\n"
-                    f"💰 **Buy Price**: {c.buy_price:,.0f}\n"
-                    f"🎯 **Target Price**: {c.target_price:,.0f}\n"
-                    f"🛑 **Stop Price**: {c.stop_price:,.0f}\n"
-                )
-                discord_messages.append(message)
+            raw_responses.append(data)
 
-            full_discord_message = "\n".join(discord_messages)
-            discord_utils.send(full_discord_message)
+            candidates_dict = {k: v for k, v in data.items() if k != "summary"}
+            candidates.append(advisor_tables.StockCandidate(**candidates_dict))
+
+        discord_messages = []
+        for i, data in enumerate(raw_responses):
+            discord_messages.append(
+                f"회사: {data['corp_name']}\n"
+                f"종목 코드: {data['stock_code']}\n"
+                f"재무건전성: {data['financial_stability_score']}\n"
+                f"성장지수: {data['growth_score']}\n"
+                f"매수지표: {data['valuation_attractiveness']}\n"
+                f"지지선(lower bound): {data['support_price']}\n"
+                f"저항선(upper bound): {data['resistance_price']}\n"
+                f"기술적 판단: {data['technical_signal']}\n"
+                f"AI 요약: {data['summary']}"
+            )
+
+        discord_utils.send_messages(discord_messages)
 
     with session.get_database_session(write_database) as db_session:
         db_session.add_all(candidates)

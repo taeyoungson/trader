@@ -1,5 +1,3 @@
 from sqlalchemy import orm
 
-
-class Base(orm.DeclarativeBase):
-    """Base for sql alchemy tables"""
+Base = orm.declarative_base()

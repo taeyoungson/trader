@@ -1,5 +1,11 @@
-infra:
-	docker-compose -f docker/docker-compose.yml --env-file .env up --build -d db
+db:
+	docker-compose -f docker/docker-compose.yml --env-file .env.docker up db -d --build
 
-teardown:
-	docker-compose -f docker/docker-compose.yml --env-file .env down -v db
+start-app:
+	docker-compose -f docker/docker-compose.yml --env-file .env.docker up -d --build
+
+teardown-app:
+	docker-compose -f docker/docker-compose.yml --env-file .env.docker down -v 
+
+apply-alembic:
+	alembic -c migrations/*.ini upgrade head

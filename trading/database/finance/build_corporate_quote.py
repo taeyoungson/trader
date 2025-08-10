@@ -5,9 +5,11 @@ from core.db import session
 from core.db import utils as db_utils
 from core.finance.kis import client as kis_client
 from core.utils import args as args_utils
+from core.utils import time as time_utils
 from trading.database.finance import tables
 
 
+@time_utils.timeit
 def main(database: str = "finance"):
     corp_quotes = []
     with session.get_database_session(database) as db_session:
