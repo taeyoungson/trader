@@ -38,7 +38,7 @@ def _load_client() -> pykis.PyKis:
     return _PYKIS_CLIENT
 
 
-def make_delayed_request_until_succeeds(fn: Callable):
+def _make_delayed_request_until_succeeds(fn: Callable):
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         delay = _DELAY
@@ -64,19 +64,19 @@ def buy(stock: pykis.KisStock, *args, **kwargs):
         logger.warning("Market not open!")
 
 
-@make_delayed_request_until_succeeds
+@_make_delayed_request_until_succeeds
 def get_account() -> pykis.KisAccount:
     _client = _load_client()
     return _client.account()
 
 
-@make_delayed_request_until_succeeds
+@_make_delayed_request_until_succeeds
 def get_stock(symbol: str) -> pykis.KisStock | None:
     _client = _load_client()
     return _client.stock(symbol)
 
 
-@make_delayed_request_until_succeeds
+@_make_delayed_request_until_succeeds
 def get_quote(symbol: str) -> pykis.KisQuote | None:
     stock = get_stock(symbol)
 
@@ -86,7 +86,7 @@ def get_quote(symbol: str) -> pykis.KisQuote | None:
     return stock.quote()
 
 
-@make_delayed_request_until_succeeds
+@_make_delayed_request_until_succeeds
 def get_chart(symbol: str, *args, **kwargs) -> pykis.KisChart | None:
     stock = get_stock(symbol)
 

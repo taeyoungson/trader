@@ -3,6 +3,8 @@ import argparse
 
 import overrides
 
+from core.utils import time as time_utils
+
 
 class ArgumentsBase(abc.ABC):
     @staticmethod
@@ -37,6 +39,27 @@ class BasicDBTaskArguments(ArgumentsBase):
         )
 
 
+class BacktestArguments(BasicDBTaskArguments):
+    @staticmethod
+    @overrides.override
+    def add_arguments(parser: argparse.ArgumentParser):
+        BasicDBTaskArguments.add_arguments(parser)
+
+        parser.add_argument(
+            "--start-date",
+            type=time_utils.DateTimeFormatter.DATE.parse,
+            required=True,
+        )
+        parser.add_argument(
+            "--window",
+            type=int,
+            required=True,
+        )
+
+        parser.add_argument("--skip-info", action="store_true")
+        parser.add_argument("--skip-quote", action="store_true")
+
+
 class PipelineTaskArguments(BasicDBTaskArguments):
     """PipelineTaskArguments"""
 
@@ -62,5 +85,4 @@ class PipelineTaskArguments(BasicDBTaskArguments):
         )
 
         parser.add_argument("--skip-info", action="store_true")
-
         parser.add_argument("--skip-quote", action="store_true")

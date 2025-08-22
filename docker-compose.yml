@@ -4,8 +4,8 @@ services:
     command:
       - --default-authentication-plugin=mysql_native_password
     volumes:
-      - ./mysql_conf/custom.cnf:/etc/mysql/conf.d/custom.cnf
-      - ./mysql_init:/docker-entrypoint-initdb.d
+      - ./trading/database/mysql_conf/custom.cnf:/etc/mysql/conf.d/custom.cnf
+      - ./trading/database/mysql_init:/docker-entrypoint-initdb.d
       - db_data:/var/lib/mysql
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
@@ -19,11 +19,11 @@ services:
 
   app:
     build:
-      context: ../
+      context: .
       dockerfile: docker/Dockerfile
     container_name: main-app
     env_file:
-      - ../.env
+      - .env
     ports:
       - "8000:80"
     depends_on:

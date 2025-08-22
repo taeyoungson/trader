@@ -3,6 +3,7 @@ import tqdm
 
 from core.db import session
 from core.db import utils as db_utils
+from core.discord import utils as discord_utils
 from core.finance.kis import client as kis_client
 from core.utils import args as args_utils
 from core.utils import time as time_utils
@@ -10,13 +11,14 @@ from trading.database.finance import tables
 
 
 @time_utils.timeit
-def main(database: str = "finance"):
+@discord_utils.monitor
+def main(database: str = "finance", top_k: int = 100):
     corp_quotes = []
     with session.get_database_session(database) as db_session:
         corps_with_stock_codes = db_session.query(tables.CorporateInfo).filter(tables.CorporateInfo.stock_code).all()
 
         logger.info(f"Getting quotes for the number of {len(corps_with_stock_codes)} companies")
-        for corp in tqdm.tqdm(corps_with_stock_codes, desc="Getting quote data..."):
+        for corp in tqdm.tqdm(corps_with_stock_codes[:top_k], desc="Getting quote data..."):
             quote = kis_client.get_quote(corp.stock_code)
 
             if not quote:

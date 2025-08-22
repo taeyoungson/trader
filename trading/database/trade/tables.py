@@ -19,5 +19,5 @@ class StockCandidate(base.Base):
     valuation_attractiveness = Column(String(30))
     support_price = Column(Integer)
     resistance_price = Column(Integer)
-    technical_signal = Column(String(30))
+    technical_signal = Column(String(40))
     date = Column(String(10))
