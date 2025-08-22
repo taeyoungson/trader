@@ -23,7 +23,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: main-app
     env_file:
-      - .env
+      - .env.docker
     ports:
       - "8000:80"
     depends_on:
