@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Callable, Self
+from typing import Any, Callable, Self
 
 
 class TriggerType(enum.StrEnum):
@@ -14,7 +14,7 @@ class TriggerMixin:
     _trigger: TriggerType
     _trigger_kwargs: dict
 
-    def add_ctx(self, trigger: TriggerType, **kwargs) -> Self:
+    def add_trigger(self, trigger: TriggerType, **kwargs) -> Self:
         self._trigger = trigger
         self._trigger_kwargs = kwargs
 
@@ -31,14 +31,17 @@ class TriggerMixin:
 
 
 class BaseJob:
-    def __init__(self, func: Callable, *args, **kwargs):
+    def __init__(self, func: str | Callable, *args, **kwargs):
         self.func = func
         self._args = args
         self._kwargs = kwargs
 
     @property
     def id(self) -> str:
-        return f"{self.func.__module__}.{self.func.__name__}.{self._kwargs.values()}"
+        if isinstance(self.func, str):
+            return self.func
+        else:
+            return f"{self.func.__module__}.{self.func.__name__}.{self._kwargs.values()}"
 
     @property
     def args(self):
@@ -53,9 +56,22 @@ class BaseJob:
         return self.id
 
 
-class TradeJob(BaseJob, TriggerMixin):
+class APSchedulerJob(BaseJob, TriggerMixin):
+    def job_arguments(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "func": self.func,
+            "args": self.args,
+            "kwargs": self.kwargs,
+            "trigger": self.trigger,
+            **self.trigger_kwargs,
+        }
+
+
+class TradeJob(APSchedulerJob):
     """Job class for trade"""
 
 
-class RunnerJob(BaseJob, TriggerMixin):
-    """Job class for trade"""
+class RunnerJob(APSchedulerJob):
+    """Job class for runner"""

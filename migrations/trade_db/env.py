@@ -2,7 +2,6 @@ from logging.config import fileConfig
 import os
 
 from alembic import context
-import dotenv
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
@@ -14,8 +13,6 @@ from trading.database import base
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-
-dotenv.load_dotenv(".env")
 
 MYSQL_USER = os.getenv("MYSQL_USER")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")

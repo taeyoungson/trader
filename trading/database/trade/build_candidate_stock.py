@@ -1,5 +1,7 @@
+import datetime
 import json
 import re
+import time
 
 from loguru import logger
 import pandas as pd
@@ -61,7 +63,13 @@ def _summarize_chart(chart) -> str:
 
 
 @time_utils.timeit
-def main(read_database: str = "finance", write_database: str = "trade", top_k: int = 30):
+@discord_utils.monitor
+def main(
+    read_database: str = "finance",
+    write_database: str = "trade",
+    date: datetime.date = time_utils.now().date(),
+    top_k: int = 30,
+):
     bot = llm.load_financial_bot()
     candidates = []
     raw_responses = []
@@ -84,51 +92,56 @@ def main(read_database: str = "finance", write_database: str = "trade", top_k: i
         )
         logger.info(f"Inspecting {min(len(corp_quotes), top_k)} stocks...")
 
-        now = time_utils.now()
         for quote_obj, info_obj in corp_quotes[:top_k]:
             if not info_obj or not info_obj.corp_code or not info_obj.stock_code:
                 continue
 
-            corp_code = info_obj.corp_code
-            stock_code = info_obj.stock_code
+            try:
+                corp_code = info_obj.corp_code
+                stock_code = info_obj.stock_code
 
-            finance_report = dart_request.get_financial_report(corp_code)
-            if not finance_report:
-                continue
+                finance_report = dart_request.get_financial_report(corp_code)
+                if not finance_report:
+                    continue
 
-            finance_report_df = finance_report.as_dataframe()
+                finance_report_df = finance_report.as_dataframe()
 
-            chart_data_csv = _summarize_chart(
-                kis_client.get_chart(
-                    stock_code,
-                    start=time_utils.get_months_before(now, 6),
-                    end=now,
+                chart_data_csv = _summarize_chart(
+                    kis_client.get_chart(
+                        stock_code,
+                        start=time_utils.get_months_before(date, 6),
+                        end=date,
+                    )
                 )
-            )
-            quote_summary_text = quote_obj.summary()
+                quote_summary_text = quote_obj.summary()
 
-            prompt = (
-                f"This is csv report of company name {info_obj.corp_name}\n"
-                f"{finance_report_df.to_csv()}\n"
-                f"This is summary of stock quote:\n{quote_summary_text}\n"
-                f"This is bar chart csv data over last 6 months:\n{chart_data_csv}"
-            )
+                prompt = (
+                    f"This is csv report of company name {info_obj.corp_name}\n"
+                    f"{finance_report_df.to_csv()}\n"
+                    f"This is summary of stock quote:\n{quote_summary_text}\n"
+                    f"This is bar chart csv data over last 6 months:\n{chart_data_csv}"
+                )
 
-            response_content = bot.invoke(prompt).content
-            data = _as_json(response_content)
-            data.update(
-                {
-                    "corp_name": info_obj.corp_name,
-                    "corp_code": info_obj.corp_code,
-                    "stock_code": info_obj.stock_code,
-                    "date": now.strftime("%Y-%m-%d"),
-                }
-            )
+                response_content = bot.invoke(prompt).content
+                data = _as_json(response_content)
+                data.update(
+                    {
+                        "corp_name": info_obj.corp_name,
+                        "corp_code": info_obj.corp_code,
+                        "stock_code": info_obj.stock_code,
+                        "date": date.strftime("%Y-%m-%d"),
+                    }
+                )
 
-            raw_responses.append(data)
+                raw_responses.append(data)
 
-            candidates_dict = {k: v for k, v in data.items() if k != "summary"}
-            candidates.append(advisor_tables.StockCandidate(**candidates_dict))
+                candidates_dict = {k: v for k, v in data.items() if k != "summary"}
+                candidates.append(advisor_tables.StockCandidate(**candidates_dict))
+
+                time.sleep(0.5)
+            except Exception as e:
+                logger.error(f"Error processing {info_obj.corp_name} ({info_obj.stock_code}): {e}")
+                continue
 
         discord_messages = []
         for i, data in enumerate(raw_responses):

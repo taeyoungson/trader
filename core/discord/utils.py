@@ -1,10 +1,14 @@
+import functools
 import json
 import textwrap
+import traceback
+from typing import Callable
 
 from loguru import logger
 import requests
 
 from core.discord import config as discord_config
+from core.utils import time as time_utils
 
 _CHAR_LIMIT = 2000
 
@@ -49,3 +53,20 @@ def send_messages(message: str | list[str], character_limit: int = _CHAR_LIMIT) 
 
         else:
             message_chunk = "\n".join([message_chunk, msg])
+
+
+def monitor(fn: Callable) -> Callable:
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except Exception as e:
+            send(
+                f"function {fn.__name__} crashed with args: {args}, kwargs: {kwargs} "
+                f"at {time_utils.DateTimeFormatter.DATETIME_FULL.format(time_utils.now())}\n"
+                f"#### Error traceback: ####\n"
+                f"{traceback.format_exc()}"
+            )
+            raise e
+
+    return wrapper

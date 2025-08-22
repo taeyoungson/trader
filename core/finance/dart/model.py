@@ -10,6 +10,14 @@ class ReportCode(enum.Enum):
     THIRD_QUARTER = "11014"
     FOURTH_QUARTER = "11011"
 
+    def next(self):
+        members = list(self.__class__)
+
+        current_index = members.index(self)
+        next_index = (current_index + 1) % len(members)
+
+        return members[next_index]
+
 
 class CorpInfoItem(pydantic.BaseModel):
     corp_code: str
@@ -62,6 +70,10 @@ class FinancialReportItem(pydantic.BaseModel):
 class FinancialReport:
     def __init__(self, items: list[FinancialReportItem]):
         self._items = items
+
+    @property
+    def items(self) -> list[FinancialReportItem]:
+        return self._items
 
     def as_dataframe(self):
         return pd.DataFrame([item.model_dump() for item in self._items])

@@ -39,7 +39,7 @@ class Runner(runner_base.PeriodicTrader):
         wallet: wallet_asset.KISWallet,
         num_candidates: int = 10,
         period: int = 60,
-        max_buy_amount: int = 100_000,
+        max_buy_amount: int = 200_000,
         num_max_stock: int = 10,
         verbose: bool = True,
     ):
@@ -56,7 +56,7 @@ class Runner(runner_base.PeriodicTrader):
         with session.get_database_session(self._database) as db_session:
             candidates = (
                 db_session.query(trade_tables.StockCandidate)
-                .filter(trade_tables.StockCandidate.date == time_utils.now().strftime("%Y-%m-%d"))
+                .filter(trade_tables.StockCandidate.date == time_utils.yesterday().strftime("%Y-%m-%d"))
                 .filter(trade_tables.StockCandidate.stock_code.not_in(self._current_holdings))
                 .filter(trade_tables.StockCandidate.growth_score >= 5)
                 .filter(trade_tables.StockCandidate.financial_stability_score >= 5)
@@ -148,6 +148,10 @@ class Runner(runner_base.PeriodicTrader):
             # currently, just use 0.236
             if quote.price <= target_prices[0]:
                 price = min(quote.price, target_prices[0])
+
+                if self._wallet.deposit(model_type.Currency.KRW).amount < price:
+                    continue
+
                 quantity = max(1, self._max_buy_amount // price)
                 self._buy(c.stock_code, buy_price=price, quantity=quantity)
 
@@ -170,3 +174,7 @@ def stop_krx_trader() -> None:
     assert _RUNNER is not None, "runner is none"
     _RUNNER.end()
     _RUNNER = None
+
+
+if __name__ == "__main__":
+    run_krx_trader()

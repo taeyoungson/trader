@@ -2,6 +2,7 @@ from loguru import logger
 
 from core.db import session
 from core.db import utils as db_utils
+from core.discord import utils as discord_utils
 from core.finance.dart import request as dart_request
 from core.utils import args as args_utils
 from core.utils import time as time_utils
@@ -9,6 +10,7 @@ from trading.database.finance import tables
 
 
 @time_utils.timeit
+@discord_utils.monitor
 def main(database: str = "finance"):
     corp_infos = [item.model_dump() for item in dart_request.get_corp_item_lists()]
 

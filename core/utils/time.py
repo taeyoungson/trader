@@ -32,12 +32,20 @@ def now() -> datetime.datetime:
     return datetime.datetime.now(TimeZone.SEOUL.value)
 
 
-def get_months_before(datetime_: datetime.datetime, months: int) -> datetime.datetime:
+def yesterday() -> datetime.datetime:
+    return datetime.datetime.now() - relativedelta.relativedelta(days=1)
+
+
+def get_months_before(datetime_: datetime.datetime | datetime.date, months: int) -> datetime.datetime | datetime.date:
     return datetime_ - relativedelta.relativedelta(months=months)
 
 
 def get_months_after(datetime_: datetime.datetime, months: int) -> datetime.datetime:
     return datetime_ + relativedelta.relativedelta(months=months)
+
+
+def get_days_after(datetime_: datetime.datetime | datetime.date, days: int) -> datetime.datetime | datetime.date:
+    return datetime_ + relativedelta.relativedelta(days=days)
 
 
 def timeit(fn: Callable) -> Any:
