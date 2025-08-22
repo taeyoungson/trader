@@ -12,12 +12,16 @@ from trading.database.finance import tables
 
 @time_utils.timeit
 @discord_utils.monitor
-def main(database: str = "finance", top_k: int = 100):
+def main(database: str = "finance", top_k: int = -1):
     corp_quotes = []
     with session.get_database_session(database) as db_session:
         corps_with_stock_codes = db_session.query(tables.CorporateInfo).filter(tables.CorporateInfo.stock_code).all()
 
         logger.info(f"Getting quotes for the number of {len(corps_with_stock_codes)} companies")
+
+        if top_k == -1:
+            top_k = len(corps_with_stock_codes)
+
         for corp in tqdm.tqdm(corps_with_stock_codes[:top_k], desc="Getting quote data..."):
             quote = kis_client.get_quote(corp.stock_code)
 
