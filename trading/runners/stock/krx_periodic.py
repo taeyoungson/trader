@@ -3,6 +3,7 @@ import dataclasses
 import overrides
 
 from core.db import session
+from core.discord import utils as discord_utils
 from core.finance.kis import client as kis_client
 from core.utils import indicator as indicator_utils
 from core.utils import time as time_utils
@@ -150,6 +151,7 @@ class Runner(runner_base.PeriodicTrader):
                 price = min(quote.price, target_prices[0])
 
                 if self._wallet.deposit(model_type.Currency.KRW).amount < price:
+                    discord_utils.send_messages(f"Not enough money to buy stock {c.stock_code}")
                     continue
 
                 quantity = max(1, self._max_buy_amount // price)

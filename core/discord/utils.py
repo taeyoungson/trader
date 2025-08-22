@@ -40,14 +40,14 @@ def send(message: str, image_url: str | None = None) -> None:
         raise RuntimeError(f"Failed to send message to dev: {e}") from e
 
 
-def send_messages(message: str | list[str], character_limit: int = _CHAR_LIMIT) -> None:
+def send_messages(message: str | list[str]) -> None:
     if isinstance(message, str):
         message = [message]
 
     message_chunk = ""
 
     for i, msg in enumerate(message):
-        if len(message_chunk) + len(msg) > character_limit:
+        if len(message_chunk) + len(msg) > _CHAR_LIMIT:
             send(message_chunk)
             message_chunk = msg
 
