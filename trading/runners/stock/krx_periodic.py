@@ -57,7 +57,7 @@ class Runner(runner_base.PeriodicTrader):
         with session.get_database_session(self._database) as db_session:
             candidates = (
                 db_session.query(trade_tables.StockCandidate)
-                .filter(trade_tables.StockCandidate.date == time_utils.yesterday().strftime("%Y-%m-%d"))
+                .filter(trade_tables.StockCandidate.date == time_utils.now().strftime("%Y-%m-%d"))
                 .filter(trade_tables.StockCandidate.stock_code.not_in(self._current_holdings))
                 .filter(trade_tables.StockCandidate.growth_score >= 5)
                 .filter(trade_tables.StockCandidate.financial_stability_score >= 5)
