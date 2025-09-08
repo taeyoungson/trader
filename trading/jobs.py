@@ -16,7 +16,7 @@ BUILD_CORPORATE_QUOTE_JOB = jobs.TradeJob(
     database="finance",
 ).add_trigger(
     trigger=jobs.TriggerType.CRON,
-    day_of_week="0, 2, 4",
+    day_of_week="0, 1, 2, 3, 4",
     hour=16,
 )
 
@@ -48,6 +48,22 @@ KRX_PERIODIC_JOBS = [
 ]
 
 
+KRX_UPPER_JOBS = [
+    jobs.RunnerJob(func="trading.runners.stock.krx_upper:run_krx_trader").add_trigger(
+        trigger=jobs.TriggerType.CRON,
+        day_of_week="0, 1, 2, 3, 4",
+        hour=8,
+        minute=50,
+    ),
+    jobs.RunnerJob(func="trading.runners.stock.krx_upper:stop_krx_trader").add_trigger(
+        trigger=jobs.TriggerType.CRON,
+        day_of_week="0, 1, 2, 3, 4",
+        hour=15,
+        minute=31,
+    ),
+]
+
+
 FINANCE_JOBS = [
     BUILD_CORPORATE_INFO_JOB,
     BUILD_CORPORATE_QUOTE_JOB,
@@ -61,6 +77,7 @@ TRADE_JOBS = [
 
 RUNNER_JOBS = [
     *KRX_PERIODIC_JOBS,
+    *KRX_UPPER_JOBS,
 ]
 
 

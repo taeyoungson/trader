@@ -78,6 +78,8 @@ class PeriodicTrader(AutoTraderBase, abc.ABC):
 
 
 class RealTimeTrader(AutoTraderBase, abc.ABC):
+    _period: int = 60
+
     def __init__(self):
         self._monitor_thread = None
         self._stop_event = threading.Event()

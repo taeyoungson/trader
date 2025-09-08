@@ -48,6 +48,14 @@ def get_days_after(datetime_: datetime.datetime | datetime.date, days: int) -> d
     return datetime_ + relativedelta.relativedelta(days=days)
 
 
+def get_days_before(datetime_: datetime.datetime | datetime.date, days: int) -> datetime.datetime | datetime.date:
+    return datetime_ - relativedelta.relativedelta(days=days)
+
+
+def start_of_the_day(datetime_: datetime.datetime) -> datetime.datetime:
+    return datetime_.replace(hour=0, minute=0)
+
+
 def timeit(fn: Callable) -> Any:
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):

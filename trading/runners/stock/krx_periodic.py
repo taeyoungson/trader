@@ -39,7 +39,6 @@ class Runner(runner_base.PeriodicTrader):
         strategy: strategy_base.StrategyBase,
         wallet: wallet_asset.KISWallet,
         num_candidates: int = 10,
-        period: int = 60,
         max_buy_amount: int = 200_000,
         num_max_stock: int = 10,
         verbose: bool = True,
@@ -49,7 +48,6 @@ class Runner(runner_base.PeriodicTrader):
         self._wallet = wallet
         self._verbose = verbose
         self._num_candidates = num_candidates
-        self._period = period
         self._max_buy_amount = max_buy_amount
         self._num_max_stock = num_max_stock
 
@@ -116,10 +114,13 @@ class Runner(runner_base.PeriodicTrader):
     @overrides.override
     def _make_buy_order(self, symbol: str, buy_price: float, quantity: int) -> None:
         stock = kis_client.get_stock(symbol)
+
+        if self._wallet.deposit(model_type.Currency.KRW).amount < buy_price * quantity:
+            self._logger.debug(f"Not enough money for stock {symbol}")
+            return
+
         if self._strategy.is_buyable(self._wallet, buy_price * quantity):
             kis_client.buy(stock=stock, qty=quantity, price=buy_price)
-        else:
-            self._logger.debug(f"Not buying stock {symbol}")
 
     @overrides.override
     def _on_sell_start(self, symbol: str) -> None:

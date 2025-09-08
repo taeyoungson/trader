@@ -1,4 +1,3 @@
-import datetime
 import json
 import re
 import time
@@ -67,10 +66,10 @@ def _summarize_chart(chart) -> str:
 def main(
     read_database: str = "finance",
     write_database: str = "trade",
-    date: datetime.date = time_utils.now().date(),
     top_k: int = 30,
 ):
     bot = llm.load_financial_bot()
+    date = time_utils.now().date()
     candidates = []
     raw_responses = []
     with session.get_database_session(read_database) as db_session:
